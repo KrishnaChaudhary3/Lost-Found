@@ -13,24 +13,23 @@ class MessageModel {
     required this.timestamp,
   });
 
-  // From JSON (when receiving from backend)
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
-      id: json['_id'],
-      sender: json['sender'],
-      receiver: json['receiver'],
-      message: json['message'],
-      timestamp: DateTime.parse(json['timestamp']),
+      id: json['_id'] ?? '',
+      sender: json['sender'] ?? '',
+      receiver: json['receiver'] ?? '',
+      message: json['content'] ?? json['message'] ?? '', // ✅ FIX: backend uses 'content'
+      timestamp: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : (json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now()),
     );
   }
 
-  // To JSON (when sending to backend)
   Map<String, dynamic> toJson() {
     return {
       'sender': sender,
       'receiver': receiver,
-      'message': message,
-      'timestamp': timestamp.toIso8601String(),
+      'content': message,
     };
   }
 }
