@@ -1,229 +1,142 @@
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
-// import '../models/item_models.dart';
-// import '../models/message_model.dart'; // Make sure you create this model
-//
-// class ApiService {
-//   // ✅ Use correct baseUrl for Android Emulator
-//   //static const String baseUrl = 'http://localhost:5000/api';
-//    //static const String baseUrl = 'http://192.168.1.10:5000/api/items'; // Example: your local server IP
-//   static const String baseUrl = 'http://10.0.2.2:5000/api';
-//
-//
-//   // ------------------------- ITEM APIs -------------------------
-//
-//   // Fetch all items
-//   static Future<List<ItemModel>> fetchItems() async {
-//     final url = Uri.parse('$baseUrl/items');
-//     print('[GET] $url');
-//     try {
-//       final response = await http.get(url);
-//       print('Status Code: ${response.statusCode}');
-//       print('Response Body: ${response.body}');
-//       if (response.statusCode == 200) {
-//         final List<dynamic> data = jsonDecode(response.body);
-//         return data.map((json) => ItemModel.fromJson(json)).toList();
-//       } else {
-//         throw Exception('Failed to load items');
-//       }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//     } catch (e) {
-//       print('Error fetching items: $e');
-//       throw e;
-//     }
-//   }
-//
-//   // Add a new item
-//   static Future<bool> addItem(ItemModel item) async {
-//     final url = Uri.parse('$baseUrl/items');
-//     print('[POST] $url');
-//     print('Request Body: ${jsonEncode(item.toJson())}');
-//     try {
-//       final response = await http.post(
-//         url,
-//         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode(item.toJson()),
-//       );
-//       print('Status Code: ${response.statusCode}');
-//       print('Response Body: ${response.body}');
-//       return response.statusCode == 201 || response.statusCode == 200;
-//     } catch (e) {
-//       print('Error adding item: $e');
-//       return false;
-//     }
-//   }
-//
-//   // Delete item by id
-//   static Future<bool> deleteItem(String? id) async {
-//     if (id == null) return false;
-//     final url = Uri.parse('$baseUrl/items/$id');
-//     print('[DELETE] $url');
-//     try {
-//       final response = await http.delete(url);
-//       print('Status Code: ${response.statusCode}');
-//       print('Response Body: ${response.body}');
-//       return response.statusCode == 200 || response.statusCode == 204;
-//     } catch (e) {
-//       print('Error deleting item: $e');
-//       return false;
-//     }
-//   }
-//
-//   // ------------------------- MESSAGE APIs -------------------------
-//
-//   // ✅ Send a message
-//   static Future<bool> sendMessage(String sender, String receiver, String content) async {
-//     final url = Uri.parse('$baseUrl/messages/send');
-//     final body = {
-//       'sender': sender,
-//       'receiver': receiver,
-//       'content': content,
-//     };
-//     print('[POST] $url');
-//     print('Request Body: ${jsonEncode(body)}');
-//     try {
-//       final response = await http.post(
-//         url,
-//         headers: {'Content-Type': 'application/json'},
-//         body: jsonEncode(body),
-//       );
-//       print('Status Code: ${response.statusCode}');
-//       print('Response Body: ${response.body}');
-//       return response.statusCode == 201;
-//     } catch (e) {
-//       print('Error sending message: $e');
-//       return false;
-//     }
-//   }
-//
-//   // ✅ Get chat messages between 2 users
-//   static Future<List<MessageModel>> getMessages(String sender, String receiver) async {
-//     final url = Uri.parse('$baseUrl/messages/chat?sender=$sender&receiver=$receiver');
-//     print('[GET] $url');
-//     try {
-//       final response = await http.get(url);
-//       print('Status Code: ${response.statusCode}');
-//       print('Response Body: ${response.body}');
-//       if (response.statusCode == 200) {
-//         final List<dynamic> data = jsonDecode(response.body);
-//         return data.map((json) => MessageModel.fromJson(json)).toList();
-//       } else {
-//         throw Exception('Failed to load messages');
-//       }
-//     } catch (e) {
-//       print('Error fetching messages: $e');
-//       return [];
-//     }
-//   }
-// }
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../constants/api_constants.dart';
 import '../models/item_models.dart';
 import '../models/message_model.dart';
+import '../models/report_model.dart';
+import 'auth_service.dart';
 
 class ApiService {
+  // ---------------- ITEMS ----------------
 
-  static const String baseUrl = 'http://172.16.92.205:5000/api/items';
+  static Future<List<ItemModel>> fetchItems({String? type, String? location}) async {
+    final params = <String, String>{};
+    if (type != null) params['type'] = type;
+    if (location != null) params['location'] = location;
 
+    final uri = Uri.parse('${ApiConstants.apiUrl}/items').replace(queryParameters: params.isEmpty ? null : params);
 
-
-
-  static Future<List<ItemModel>> fetchItems() async {
-    final url = Uri.parse('http://172.16.92.205:5000/api/items');
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => ItemModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load items');
-      }
-    } catch (e) {
-      print('Error fetching items: $e');
-      rethrow;
+    final response = await http.get(uri, headers: await AuthService.authHeaders());
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => ItemModel.fromJson(json)).toList();
     }
+    throw Exception('Failed to load items (${response.statusCode})');
   }
-
 
   static Future<bool> addItem(ItemModel item) async {
-    final url = Uri.parse('http://172.16.92.205:5000/api/items');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      );
-      return response.statusCode == 201 || response.statusCode == 200;
-    } catch (e) {
-      print('Error adding item: $e');
-      return false;
-    }
+    final response = await http.post(
+      Uri.parse('${ApiConstants.apiUrl}/items'),
+      headers: await AuthService.authHeaders(),
+      body: jsonEncode(item.toJson()),
+    );
+    return response.statusCode == 201 || response.statusCode == 200;
   }
 
-  // Delete
   static Future<bool> deleteItem(String? id) async {
     if (id == null) return false;
-    final url = Uri.parse('http://172.16.92.205:5000/api/items/$id');
-    try {
-      final response = await http.delete(url);
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      print('Error deleting item: $e');
-      return false;
-    }
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.apiUrl}/items/$id'),
+      headers: await AuthService.authHeaders(),
+    );
+    return response.statusCode == 200 || response.statusCode == 204;
   }
 
+  // ---------------- REPORTS ----------------
 
-
-  static Future<bool> sendMessage(String sender, String receiver, String content) async {
-    final url = Uri.parse('http://172.16.92.205:5000/api/messages/send');
-    final body = {
-      'sender': sender,
-      'receiver': receiver,
-      'content': content,
-    };
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      return response.statusCode == 201;
-    } catch (e) {
-      print('Error sending message: $e');
-      return false;
+  static Future<List<ReportModel>> fetchReports({String? type}) async {
+    final uri = Uri.parse('${ApiConstants.apiUrl}/reports${type != null && type != 'all' ? '?type=$type' : ''}');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => ReportModel.fromJson(json)).toList();
     }
+    throw Exception('Failed to load reports (${response.statusCode})');
   }
 
-  static Future<List<MessageModel>> getMessages(String sender, String receiver) async {
-    final url = Uri.parse('http://172.16.92.205:5000/api/messages/chat?sender=$sender&receiver=$receiver');
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => MessageModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load messages');
-      }
-    } catch (e) {
-      print('Error fetching messages: $e');
-      return [];
+  static Future<List<ReportModel>> fetchMyReports() async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.apiUrl}/reports/my'),
+      headers: await AuthService.authHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => ReportModel.fromJson(json)).toList();
     }
+    throw Exception('Failed to load your reports (${response.statusCode})');
+  }
+
+  static Future<bool> submitReport(Map<String, dynamic> reportData) async {
+    final response = await http.post(
+      Uri.parse('${ApiConstants.apiUrl}/reports'),
+      headers: await AuthService.authHeaders(),
+      body: jsonEncode(reportData),
+    );
+    return response.statusCode == 201;
+  }
+
+  static Future<bool> deleteReport(String? id) async {
+    if (id == null) return false;
+    final response = await http.delete(
+      Uri.parse('${ApiConstants.apiUrl}/reports/$id'),
+      headers: await AuthService.authHeaders(),
+    );
+    return response.statusCode == 200;
+  }
+
+  // ---------------- MESSAGES ----------------
+
+  static Future<List<Map<String, dynamic>>> fetchInbox() async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.apiUrl}/messages'),
+      headers: await AuthService.authHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    }
+    throw Exception('Failed to load messages (${response.statusCode})');
+  }
+
+  static Future<List<MessageModel>> getMessages(String otherUserId) async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.apiUrl}/messages/$otherUserId'),
+      headers: await AuthService.authHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => MessageModel.fromJson(json)).toList();
+    }
+    throw Exception('Failed to load chat (${response.statusCode})');
+  }
+
+  static Future<bool> sendMessage(String receiverId, String content) async {
+    final response = await http.post(
+      Uri.parse('${ApiConstants.apiUrl}/messages/send'),
+      headers: await AuthService.authHeaders(),
+      body: jsonEncode({'receiverId': receiverId, 'content': content}),
+    );
+    return response.statusCode == 201;
+  }
+
+  // ---------------- IMAGE UPLOAD ----------------
+
+  static Future<String?> uploadImage(File imageFile) async {
+    final uri = Uri.parse('${ApiConstants.apiUrl}/upload');
+    final token = await AuthService.getToken();
+
+    final request = http.MultipartRequest('POST', uri);
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['imageUrl'];
+    }
+    return null;
   }
 }
