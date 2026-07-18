@@ -133,20 +133,22 @@ Screenshots of the application interface can be found below.
 **login Page**
 <img width="378" height="689" alt="Screenshot 2026-07-05 120737" src="https://github.com/user-attachments/assets/7b232cc3-cfce-4aa4-b208-86ac3a3f38dc" />
 
+
 **Home Page**
 <img width="365" height="698" alt="Screenshot 2026-07-05 120442" src="https://github.com/user-attachments/assets/684e659c-fde3-49ee-8155-17f965885360" />
+
 
 **Report Item**
 <img width="338" height="686" alt="Screenshot 2026-07-05 115716" src="https://github.com/user-attachments/assets/a7d2c342-f7fe-4d3e-b95d-d95bd8f7dd66" />
 
+
 **Profile Page**
 <img width="351" height="688" alt="Screenshot 2026-07-05 120917" src="https://github.com/user-attachments/assets/4c9ed00c-e021-479d-b5d3-83aa71940e5a" />
 
-**Search Page**
-<img width="351" height="688" alt="Screenshot 2026-07-05 120917" src="https://github.com/user-attachments/assets/8f76a2e7-ed06-40de-b838-9f93b4756352" />
 
 **Settings**
 <img width="342" height="685" alt="Screenshot 2026-07-05 120943" src="https://github.com/user-attachments/assets/7c89cf3b-5a2a-4798-9903-b4f13d8490b5" />
+
 
 
 
