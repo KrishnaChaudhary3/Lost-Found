@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav.dart';
+import '../services/auth_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
-  void _handleLogout(BuildContext context) {
-    // 🔒 Future: Clear auth token from secure storage here
-    // For now, show message and redirect to login
+  Future<void> _handleLogout(BuildContext context) async {
+    await AuthService.logout();
+
+    if (!context.mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Logged out")),
     );
 
-    // 🧭 Redirect to login page (update route name if needed)
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
@@ -26,9 +28,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.account_circle,
             title: "Account",
             subtitle: "Manage your account",
-            onTap: () {
-              // Future: Navigate to Account Details Page
-            },
+            onTap: () {},
           ),
           _buildTile(
             icon: Icons.notifications,
