@@ -1,19 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
-import '../models/item_models.dart';
+
+
+import 'package:flutter/material.dart';
+import '../models/report_model.dart';
+import '../services/api_service.dart';
 import '../widgets/bottom_nav.dart';
 
 class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
   @override
   State<SearchPage> createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-  List<ItemModel> items = [];
+  List<ReportModel> items = [];
   String searchQuery = '';
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -22,20 +26,19 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> fetchItemsFromBackend() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
     try {
-      final response = await http.get(Uri.parse('http://172.16.92.205:5000/api/items'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          items = data.map((json) => ItemModel.fromJson(json)).toList();
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load items');
-      }
-    } catch (e) {
-      print('Error fetching items: $e');
+      final fetched = await ApiService.fetchReports();
       setState(() {
+        items = fetched;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Could not load items: $e';
         isLoading = false;
       });
     }
@@ -43,7 +46,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<ItemModel> filteredItems = items.where((item) {
+    List<ReportModel> filteredItems = items.where((item) {
       final title = item.title ?? '';
       final desc = item.description ?? '';
       return title.toLowerCase().contains(searchQuery.toLowerCase()) ||
@@ -51,48 +54,75 @@ class _SearchPageState extends State<SearchPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text("Search Items")),
+      appBar: AppBar(title: const Text("Search Items")),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
             TextField(
               onChanged: (val) => setState(() => searchQuery = val),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: "Search by title or description...",
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),
             ),
             const SizedBox(height: 12),
-            isLoading
-                ? CircularProgressIndicator()
-                : Expanded(
-              child: filteredItems.isEmpty
-                  ? Center(child: Text("No items found."))
-                  : ListView.builder(
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(item.title ?? '', overflow: TextOverflow.ellipsis),
-                      subtitle: Text(item.description ?? '', overflow: TextOverflow.ellipsis),
-                      trailing: Text(
-                        (item.status ?? '').toUpperCase(),
-                        style: TextStyle(
-                          color: item.status == 'lost' ? Colors.red : Colors.green,
-                          fontWeight: FontWeight.bold,
+            if (isLoading)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (errorMessage != null)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(errorMessage!, textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      ElevatedButton(onPressed: fetchItemsFromBackend, child: const Text("Retry")),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: filteredItems.isEmpty
+                    ? const Center(child: Text("No items found."))
+                    : ListView.builder(
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    return Card(
+                      child: ListTile(
+                        leading: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                            ? ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            item.imageUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_not_supported),
+                          ),
+                        )
+                            : null,
+                        title: Text(item.title ?? '', overflow: TextOverflow.ellipsis),
+                        subtitle: Text(item.description ?? '', overflow: TextOverflow.ellipsis),
+                        trailing: Text(
+                          (item.type ?? '').toUpperCase(),
+                          style: TextStyle(
+                            color: item.type == 'lost' ? Colors.red : Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        onTap: () {
+                          Navigator.pushNamed(context, '/viewItem', arguments: item);
+                        },
                       ),
-                      onTap: () {
-                        Navigator.pushNamed(context, '/viewItem', arguments: item);
-                      },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),
