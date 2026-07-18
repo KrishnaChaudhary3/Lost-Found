@@ -6,10 +6,8 @@ const generateToken = id => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn
 exports.registerUser = async (req, res) => {
   const { name, email, password } = req.body;
   try {
-    // const user = await User.create({ name, email, password });
     const user = new User({ name, email, password });
     await user.save();
-
     res.json({ _id: user._id, name, email, token: generateToken(user._id) });
   } catch (err) {
     res.status(400).json({ message: 'User already exists' });
